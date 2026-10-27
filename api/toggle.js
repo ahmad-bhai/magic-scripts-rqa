@@ -1,19 +1,15 @@
 import { Redis } from '@upstash/redis';
 
-// Safe initialization check
-let redis;
-try {
-  redis = Redis.fromEnv();
-} catch (e) {
-  console.error("Redis connection error:", e);
-}
-
 export default async function handler(req, res) {
   try {
-    if (!redis) {
-      return res.status(500).json({ error: "Upstash Redis environment variables are missing in Vercel." });
+    // Check if Upstash environment variables exist
+    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+      return res.status(500).json({ 
+        error: "Database not connected! Please connect Upstash Redis in Vercel Storage tab." 
+      });
     }
 
+    const redis = Redis.fromEnv();
     const { token, id, status } = req.query;
 
     if (!token || !id || status === undefined) {
