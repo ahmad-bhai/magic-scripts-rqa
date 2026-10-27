@@ -1,8 +1,6 @@
 import { Redis } from '@upstash/redis';
 import TelegramBot from 'node-telegram-bot-api';
 
-const redis = Redis.fromEnv();
-
 const pairsList = [
   { pair: "USDBRLOTC", title: "💖 USD / BRL OTC 💖" },
   { pair: "USDMXNOTC", title: "🌸 USD / MXN OTC 🌸" },
@@ -19,6 +17,13 @@ const pairsList = [
 
 export default async function handler(req, res) {
   try {
+    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+      return res.status(500).json({ 
+        error: "Database not connected! Please connect Upstash Redis in Vercel Storage tab." 
+      });
+    }
+
+    const redis = Redis.fromEnv();
     const config = await redis.get('bot_config');
 
     if (!config || !config.enabled) {
@@ -27,7 +32,6 @@ export default async function handler(req, res) {
 
     let count = (await redis.get('signal_count')) || 0;
 
-    // Stop after 100 Signals
     if (count >= 100) {
       const bot = new TelegramBot(config.token);
       const summaryMsg = 
@@ -43,10 +47,8 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: "Daily 100 Signals Completed" });
     }
 
-    // Select Random Pair
     const selected = pairsList[Math.floor(Math.random() * pairsList.length)];
 
-    // Fetch Live Signal from External API
     let directionStr = "🔼 UP / CALL";
     try {
       const apiRes = await fetch(`https://magic-scripts-live.vercel.app/s/?pair=${selected.pair}&tf=1M`);
@@ -66,7 +68,6 @@ export default async function handler(req, res) {
     count += 1;
     await redis.set('signal_count', count);
 
-    // Trade time: exact 30 seconds in future
     const tradeTime = new Date(Date.now() + 30 * 1000);
     const hours = String(tradeTime.getHours()).padStart(2, '0');
     const minutes = String(tradeTime.getMinutes()).padStart(2, '0');
