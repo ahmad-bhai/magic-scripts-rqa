@@ -17,13 +17,16 @@ const pairsList = [
 
 export default async function handler(req, res) {
   try {
-    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+
+    if (!url || !token) {
       return res.status(500).json({ 
-        error: "Database not connected! Please connect Upstash Redis in Vercel Storage tab." 
+        error: "Database variables missing. Make sure Upstash KV is connected." 
       });
     }
 
-    const redis = Redis.fromEnv();
+    const redis = new Redis({ url, token });
     const config = await redis.get('bot_config');
 
     if (!config || !config.enabled) {
