@@ -2,17 +2,20 @@ import { Redis } from '@upstash/redis';
 
 export default async function handler(req, res) {
   try {
-    // Check if Upstash environment variables exist
-    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    // Vercel KV aur Upstash Redis dono Environment Variables support karega
+    const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+
+    if (!url || !token) {
       return res.status(500).json({ 
-        error: "Database not connected! Please connect Upstash Redis in Vercel Storage tab." 
+        error: "Database variables missing. Make sure Upstash KV is connected." 
       });
     }
 
-    const redis = Redis.fromEnv();
-    const { token, id, status } = req.query;
+    const redis = new Redis({ url, token });
+    const { token: botToken, id, status } = req.query;
 
-    if (!token || !id || status === undefined) {
+    if (!botToken || !id || status === undefined) {
       return res.status(400).json({ error: "Missing parameters: token, id, or status" });
     }
 
@@ -20,7 +23,7 @@ export default async function handler(req, res) {
     const isON = status.toLowerCase() === 'true';
 
     await redis.set('bot_config', {
-      token: token,
+      token: botToken,
       channelId: targetChannelId,
       enabled: isON
     });
