@@ -81,7 +81,8 @@ export default async function handler(req, res) {
       `😍 1 MINUTES 💗\n\n` +
       `${directionStr}\n\n` +
       `⏰ TIME = ${timeFormatted}\n` +
-      `📊 SIGNAL = ${count} / 100`;
+      `📊 SIGNAL = ${count} / 100\n` +
+      `⏳ This bot tells 30 seconds in advance so place a trade after 30 seconds.;
 
     const bot = new TelegramBot(config.token);
     await bot.sendMessage(config.channelId, fullMsg);
